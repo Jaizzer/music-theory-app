@@ -17,6 +17,13 @@ const GLOW_CLASSES: Record<GameRoundStatus['phase'], string> = {
 	complete: 'border-border',
 };
 
+function formatTime(ms: number): string {
+	const totalSeconds = Math.ceil(ms / 1000);
+	const minutes = Math.floor(totalSeconds / 60);
+	const seconds = totalSeconds % 60;
+	return `${String(minutes)}:${String(seconds).padStart(2, '0')}`;
+}
+
 interface GameShellProps {
 	status: GameRoundStatus;
 	children: ReactNode;
@@ -28,7 +35,7 @@ export default function GameShell({ status, children }: GameShellProps) {
 			<RoundComplete
 				points={status.points}
 				correctCount={status.correctCount}
-				roundLength={status.roundLength}
+				totalCount={status.totalCount}
 				submitError={status.submitError}
 			/>
 		);
@@ -40,7 +47,10 @@ export default function GameShell({ status, children }: GameShellProps) {
 		>
 			<div className='flex justify-between text-sm text-text-muted'>
 				<span>
-					Question {status.questionsAnswered + 1}/{status.roundLength}
+					Time:{' '}
+					<span className='text-text'>
+						{formatTime(status.timeRemainingMs)}
+					</span>
 				</span>
 				<span>
 					Points: <span className='text-text'>{status.points}</span> ·

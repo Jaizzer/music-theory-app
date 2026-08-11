@@ -29,6 +29,21 @@ export const auth = betterAuth({
 	// frontend's origin for cross-origin sign-up/sign-in to work at all.
 	trustedOrigins: config.frontendUrl ? [config.frontendUrl] : [],
 
+	// The session cookie defaults to SameSite=Lax, which is silently
+	// dropped on cross-*site* requests — not just cross-origin. In
+	// production the frontend and backend are separate *.vercel.app
+	// deployments, and `vercel.app` itself is a public suffix, so those are
+	// genuinely different sites (different eTLD+1), not just different
+	// subdomains of one domain. That's stricter than local dev, where
+	// browsers special-case localhost leniently regardless of port.
+	// SameSite=None requires Secure, which requires HTTPS — fine in
+	// production, but would silently break cookies entirely in local dev
+	// over plain http://localhost, so this only applies when deployed.
+	advanced:
+		config.nodeEnv === 'production'
+			? { defaultCookieAttributes: { sameSite: 'none', secure: true } }
+			: undefined,
+
 	database: prismaAdapter(prisma, {
 		provider: 'postgresql',
 	}),

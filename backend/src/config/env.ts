@@ -91,6 +91,15 @@ const frontendUrl =
 	process.env.FRONTEND_URL ??
 	(nodeEnv === 'production' ? undefined : 'http://localhost:5173');
 
+// Optional, same reasoning as googleClient above — see src/lib/mailer.ts
+// for the dev-fallback behavior when this is unset. Forced unset in tests
+// regardless of what's in .env, the same isolation principle as
+// databaseUrlByEnv above: the test suite creates sign-up/reset-password
+// fixtures constantly and must never make real calls to an external email
+// API (slow, flaky, and burns real send quota).
+const resendApiKey =
+	nodeEnv === 'test' ? undefined : process.env.RESEND_API_KEY;
+
 const config = {
 	port,
 	nodeEnv,
@@ -98,6 +107,7 @@ const config = {
 	betterAuth: { secret: process.env.BETTER_AUTH_SECRET, url: baseUrl },
 	googleClient,
 	frontendUrl,
+	resendApiKey,
 };
 
 export default config;

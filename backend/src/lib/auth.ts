@@ -13,6 +13,7 @@ import { betterAuth } from 'better-auth/minimal';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { prisma } from '../database/prismaClient.ts';
 import config from '../config/env.ts';
+import { sendAuthEmail } from './mailer.ts';
 
 // Every Vercel deployment of the frontend gets its own unique preview URL
 // in addition to the stable FRONTEND_URL alias (e.g.
@@ -77,20 +78,25 @@ export const auth = betterAuth({
 
 	emailAndPassword: {
 		enabled: true,
+		// Without this, POST /request-password-reset returns
+		// RESET_PASSWORD_DISABLED — this is what actually turns on the
+		// forgot-password feature, not just a nicety on top of it.
+		sendResetPassword: async ({ user, url }) => {
+			await sendAuthEmail(
+				user.email,
+				'Reset your password',
+				`<p>Click the link below to reset your password:</p><p><a href="${url}">${url}</a></p><p>This link expires in 1 hour.</p>`,
+			);
+		},
 	},
 
 	emailVerification: {
-		sendVerificationEmail: ({ user, url }) => {
-			// Wire up a real email provider here (Resend, SES, etc.) before
-			// going to production — until then this just logs the link so you
-			// can verify the flow works end to end in development.
-			//
-			// Better Auth's type expects a Promise back, but there's nothing
-			// to actually await for a synchronous console.log — returning
-			// `Promise.resolve()` satisfies that without an `async` keyword
-			// that has no `await` in it (which the linter would flag).
-			console.log(`Verification email for ${user.email}: ${url}`);
-			return Promise.resolve();
+		sendVerificationEmail: async ({ user, url }) => {
+			await sendAuthEmail(
+				user.email,
+				'Verify your email',
+				`<p>Click the link below to verify your email address:</p><p><a href="${url}">${url}</a></p>`,
+			);
 		},
 		sendOnSignUp: true,
 		autoSignInAfterVerification: true,

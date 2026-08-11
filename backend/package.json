@@ -1,7 +1,7 @@
 {
-	"name": "music-theory-app-backend",
+	"name": "fretrank-backend",
 	"version": "1.0.0",
-	"description": "Express + Prisma + PostgreSQL monolith API for the Music Theory App.",
+	"description": "Express + Prisma + PostgreSQL monolith API for FretRank.",
 	"type": "module",
 	"scripts": {
 		"dev": "NODE_ENV=development nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/server.ts",

@@ -33,8 +33,7 @@ export default function App() {
 					<AuthHero />
 					<div className='w-full max-w-sm space-y-6'>
 						<h1 className='text-center text-2xl font-bold text-text'>
-							Music Theory{' '}
-							<span className='text-accent'>App</span>
+							Fret<span className='text-accent'>Rank</span>
 						</h1>
 						<Routes>
 							<Route
@@ -65,7 +64,7 @@ export default function App() {
 			<div className='mx-auto max-w-3xl px-4'>
 				<header className='flex items-center justify-between border-b border-border-muted py-4'>
 					<Link to='/' className='text-lg font-bold text-text'>
-						Music Theory <span className='text-accent'>App</span>
+						Fret<span className='text-accent'>Rank</span>
 					</Link>
 					<div className='flex items-center gap-3 text-sm'>
 						<span className='text-text-muted'>

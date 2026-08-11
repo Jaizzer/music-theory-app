@@ -30,7 +30,7 @@ export async function sendAuthEmail(
 	}
 
 	await resend.emails.send({
-		from: 'Music Theory App <onboarding@resend.dev>',
+		from: 'FretRank <onboarding@resend.dev>',
 		to,
 		subject,
 		html,

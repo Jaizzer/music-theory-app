@@ -32,7 +32,7 @@ describe('App', () => {
 		render(<App />);
 
 		expect(
-			screen.getByRole('heading', { name: 'Music Theory App' }),
+			screen.getByRole('heading', { name: 'FretRank' }),
 		).toBeInTheDocument();
 		expect(await screen.findByPlaceholderText('Email')).toBeInTheDocument();
 	});

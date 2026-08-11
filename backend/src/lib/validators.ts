@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { GameSlug } from '../database/generated/enums.ts';
+import { GameSlug, FriendshipStatus } from '../database/generated/enums.ts';
 
 // Sign-up/sign-in request bodies are validated internally by Better Auth
 // (see src/lib/auth.ts) — this file only validates bodies for our own
@@ -14,4 +14,14 @@ export const CreateGameAttemptSchema = z.object({
 	correctCount: z.number().int().nonnegative(),
 	totalCount: z.number().int().positive(),
 	durationSeconds: z.number().int().nonnegative(),
+});
+
+export const SendFriendRequestSchema = z.object({
+	addresseeEmail: z.email(),
+});
+
+// Only these two — a friend request isn't set back to PENDING once
+// answered, so that's not a valid transition to accept from a client.
+export const RespondToFriendRequestSchema = z.object({
+	status: z.enum([FriendshipStatus.ACCEPTED, FriendshipStatus.DECLINED]),
 });

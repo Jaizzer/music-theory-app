@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { apiFetch, ApiError } from '../../lib/api.ts';
 import Card from '../../components/Card.tsx';
 import Button from '../../components/Button.tsx';
+import Input from '../../components/Input.tsx';
 
 interface FriendUser {
 	id: string;
@@ -19,9 +20,6 @@ interface FriendsData {
 	incomingRequests: FriendRequestEntry[];
 	outgoingRequests: FriendRequestEntry[];
 }
-
-const INPUT_CLASSES =
-	'block w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-text-dim focus:border-accent focus:outline-none';
 
 export default function FriendsPanel() {
 	const [data, setData] = useState<FriendsData | null>(null);
@@ -89,14 +87,14 @@ export default function FriendsPanel() {
 					onSubmit={(event) => void handleSend(event)}
 					className='flex gap-2'
 				>
-					<input
+					<Input
 						type='email'
 						value={email}
 						onChange={(event) => {
 							setEmail(event.target.value);
 						}}
 						placeholder="Friend's email"
-						className={INPUT_CLASSES}
+						className='flex-1'
 						required
 					/>
 					<Button type='submit'>Add</Button>

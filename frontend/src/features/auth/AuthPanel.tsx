@@ -1,22 +1,24 @@
-// Sign-up / sign-in against Better Auth (authClient.ts). This is only ever
-// rendered by App.tsx's auth gate when there's no session — once signed
-// in, the router takes over and this unmounts. Profile viewing/editing and
-// sign-out live at the app layer now (see App.tsx's header), not here,
-// since they're needed on every page, not just this one.
+// Sign-up / sign-in / forgot-password against Better Auth (authClient.ts).
+// This is only ever rendered by App.tsx's auth gate when there's no
+// session — once signed in, the router takes over and this unmounts.
+// Profile viewing/editing and sign-out live at the app layer now (see
+// App.tsx's header), not here, since they're needed on every page, not
+// just this one.
 import { useState } from 'react';
 import { authClient } from '../../lib/authClient.ts';
 import Card from '../../components/Card.tsx';
 import Button from '../../components/Button.tsx';
+import Input from '../../components/Input.tsx';
 
-const INPUT_CLASSES =
-	'block w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-text-dim focus:border-accent focus:outline-none';
+type Mode = 'sign-in' | 'sign-up' | 'forgot-password';
 
 export default function AuthPanel() {
-	const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-up');
+	const [mode, setMode] = useState<Mode>('sign-up');
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
 	const [name, setName] = useState('');
 	const [error, setError] = useState<string | null>(null);
+	const [resetRequested, setResetRequested] = useState(false);
 
 	async function handleSubmit(event: React.FormEvent) {
 		event.preventDefault();
@@ -30,6 +32,83 @@ export default function AuthPanel() {
 		if (result.error) {
 			setError(result.error.message ?? 'Something went wrong.');
 		}
+	}
+
+	async function handleRequestReset(event: React.FormEvent) {
+		event.preventDefault();
+		setError(null);
+
+		// Better Auth doesn't leak whether the address exists — this
+		// resolves the same way either way, so the confirmation message
+		// stays neutral rather than "email sent" vs "no such account."
+		const result = await authClient.requestPasswordReset({
+			email,
+			redirectTo: '/reset-password',
+		});
+
+		if (result.error) {
+			setError(result.error.message ?? 'Something went wrong.');
+			return;
+		}
+		setResetRequested(true);
+	}
+
+	if (mode === 'forgot-password') {
+		return (
+			<Card className='p-6'>
+				{resetRequested ? (
+					<div className='space-y-4 text-center'>
+						<p className='text-sm text-text'>
+							If that email exists, check your inbox for a reset
+							link.
+						</p>
+						<Button
+							type='button'
+							variant='ghost'
+							className='w-full'
+							onClick={() => {
+								setMode('sign-in');
+								setResetRequested(false);
+							}}
+						>
+							Back to sign in
+						</Button>
+					</div>
+				) : (
+					<form
+						onSubmit={(event) => void handleRequestReset(event)}
+						className='space-y-4'
+					>
+						<p className='text-sm text-text-muted'>
+							Enter your email and we'll send you a link to reset
+							your password.
+						</p>
+						<Input
+							type='email'
+							value={email}
+							onChange={(event) => {
+								setEmail(event.target.value);
+							}}
+							placeholder='Email'
+							required
+						/>
+						{error && <p className='text-sm text-error'>{error}</p>}
+						<Button type='submit' className='w-full'>
+							Send reset link
+						</Button>
+						<button
+							type='button'
+							onClick={() => {
+								setMode('sign-in');
+							}}
+							className='w-full text-center text-sm text-text-muted hover:text-text'
+						>
+							Back to sign in
+						</button>
+					</form>
+				)}
+			</Card>
+		);
 	}
 
 	return (
@@ -68,37 +147,47 @@ export default function AuthPanel() {
 				</div>
 
 				{mode === 'sign-up' && (
-					<input
+					<Input
 						value={name}
 						onChange={(event) => {
 							setName(event.target.value);
 						}}
 						placeholder='Name'
-						className={INPUT_CLASSES}
 						required
 					/>
 				)}
-				<input
+				<Input
 					type='email'
 					value={email}
 					onChange={(event) => {
 						setEmail(event.target.value);
 					}}
 					placeholder='Email'
-					className={INPUT_CLASSES}
 					required
 				/>
-				<input
+				<Input
 					type='password'
 					value={password}
 					onChange={(event) => {
 						setPassword(event.target.value);
 					}}
 					placeholder='Password'
-					className={INPUT_CLASSES}
 					minLength={8}
 					required
 				/>
+
+				{mode === 'sign-in' && (
+					<button
+						type='button'
+						onClick={() => {
+							setError(null);
+							setMode('forgot-password');
+						}}
+						className='text-sm text-accent hover:underline'
+					>
+						Forgot password?
+					</button>
+				)}
 
 				{error && <p className='text-sm text-error'>{error}</p>}
 

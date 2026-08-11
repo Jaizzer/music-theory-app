@@ -1,5 +1,5 @@
 // The question loop is now just: generate a question, let the player pick
-// a note and a mode, auto-check once both are picked. Phase/score/streak/
+// a note and a mode, auto-check once both are picked. Phase/points/combo/
 // timers/submission all live in useGameRound — this file only owns "what
 // counts as an answer" for mode-drill specifically, and clears just the
 // wrong half of a two-part answer on a miss (the one thing that's

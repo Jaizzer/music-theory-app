@@ -1,12 +1,12 @@
 // A ranking table in the LeetCode/HackerRank mold: rank badges, a
 // self-highlighted row, and a Global/Friends scope alongside the existing
-// Streak/Score sort. Global is the default — per the product decision,
+// Streak/Points sort. Global is the default — per the product decision,
 // this is visible to any signed-in user, not just friends; friends is kept
 // as a filter tab rather than removed.
 //
 // One fetch per scope (each response already carries both ranking metrics
 // — see the backend's N+1-avoidance comment on leaderboard.service.ts), so
-// switching the Streak/Score tab just re-sorts client-side, while switching
+// switching the Streak/Points tab just re-sorts client-side, while switching
 // Global/Friends re-fetches against the new scope.
 import { useEffect, useState } from 'react';
 import { apiFetch, ApiError } from '../../lib/api.ts';
@@ -19,11 +19,11 @@ interface LeaderboardEntry {
 	name: string | null;
 	currentStreak: number;
 	longestStreak: number;
-	totalScore: number;
+	totalPoints: number;
 }
 
 type Scope = 'global' | 'friends';
-type SortBy = 'streak' | 'score';
+type SortBy = 'streak' | 'points';
 
 function rankTone(index: number): 'gold' | 'silver' | 'bronze' | 'default' {
 	if (index === 0) return 'gold';
@@ -74,7 +74,7 @@ export default function Leaderboard() {
 		? [...entries].sort((a, b) =>
 				sortBy === 'streak'
 					? b.currentStreak - a.currentStreak
-					: b.totalScore - a.totalScore,
+					: b.totalPoints - a.totalPoints,
 			)
 		: null;
 
@@ -105,7 +105,7 @@ export default function Leaderboard() {
 			</div>
 
 			<div className='flex gap-1 border-b border-border-muted pb-2 text-xs'>
-				{(['streak', 'score'] as const).map((value) => (
+				{(['streak', 'points'] as const).map((value) => (
 					<button
 						key={value}
 						type='button'
@@ -144,7 +144,7 @@ export default function Leaderboard() {
 							<th className='w-12 pb-2 font-semibold'>Rank</th>
 							<th className='pb-2 font-semibold'>Player</th>
 							<th className='pb-2 text-right font-semibold'>
-								{sortBy === 'streak' ? 'Streak' : 'Score'}
+								{sortBy === 'streak' ? 'Streak' : 'Points'}
 							</th>
 						</tr>
 					</thead>
@@ -174,7 +174,7 @@ export default function Leaderboard() {
 									<td className='py-2 text-right font-mono text-text'>
 										{sortBy === 'streak'
 											? entry.currentStreak
-											: entry.totalScore}
+											: entry.totalPoints}
 									</td>
 								</tr>
 							);

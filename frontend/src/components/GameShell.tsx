@@ -3,8 +3,8 @@ import type { GameRoundStatus } from '../lib/useGameRound.ts';
 import Card from './Card.tsx';
 import RoundComplete from './RoundComplete.tsx';
 
-// The panel every game plays inside: a header (question progress, score,
-// streak) plus a border+shadow "pulse" on correct/incorrect — ../mode's
+// The panel every game plays inside: a header (question progress, points,
+// combo) plus a border+shadow "pulse" on correct/incorrect — ../mode's
 // `.panel-correct`/`.panel-error` treatment (a colored glow, not just a
 // border-color swap) applied generically via `status.phase`, so all three
 // games get it automatically instead of each re-implementing the glow.
@@ -26,7 +26,7 @@ export default function GameShell({ status, children }: GameShellProps) {
 	if (status.phase === 'complete') {
 		return (
 			<RoundComplete
-				score={status.score}
+				points={status.points}
 				correctCount={status.correctCount}
 				roundLength={status.roundLength}
 				submitError={status.submitError}
@@ -43,8 +43,8 @@ export default function GameShell({ status, children }: GameShellProps) {
 					Question {status.questionsAnswered + 1}/{status.roundLength}
 				</span>
 				<span>
-					Score: <span className='text-text'>{status.score}</span> ·
-					Streak: <span className='text-text'>{status.streak}</span>
+					Points: <span className='text-text'>{status.points}</span> ·
+					Combo: <span className='text-text'>{status.combo}</span>
 				</span>
 			</div>
 			{children}

@@ -5,11 +5,14 @@
 import { Link } from 'react-router';
 import StreakBadge from '../features/streaks/StreakBadge.tsx';
 import Leaderboard from '../features/leaderboard/Leaderboard.tsx';
+import Badge from '../components/Badge.tsx';
+import { GAME_WEIGHTS, type GameSlug } from '../lib/useGameRound.ts';
 
 interface GameCard {
 	to: string;
 	title: string;
 	description: string;
+	game: GameSlug;
 }
 
 const GAMES: GameCard[] = [
@@ -18,18 +21,21 @@ const GAMES: GameCard[] = [
 		title: 'Mode Drill',
 		description:
 			'Name the root note and mode for a given parent scale + degree.',
+		game: 'MODE_DRILL',
 	},
 	{
 		to: '/games/fretboard-identifier',
 		title: 'Fretboard Identifier',
 		description:
 			'Name the note at a highlighted position on the fretboard.',
+		game: 'FRETBOARD_IDENTIFIER',
 	},
 	{
 		to: '/games/scale-degree',
 		title: 'Scale Degree',
 		description:
 			'Given a root and a target position, name the interval between them.',
+		game: 'SCALE_DEGREE',
 	},
 ];
 
@@ -49,9 +55,14 @@ export default function HubPage() {
 							to={game.to}
 							className='rounded-lg border border-border bg-surface p-4 transition-colors hover:border-accent hover:bg-surface-hover'
 						>
-							<h3 className='font-bold text-text'>
-								{game.title}
-							</h3>
+							<div className='flex items-center justify-between'>
+								<h3 className='font-bold text-text'>
+									{game.title}
+								</h3>
+								<Badge tone='accent'>
+									{GAME_WEIGHTS[game.game]}× points
+								</Badge>
+							</div>
 							<p className='mt-1 text-sm text-text-muted'>
 								{game.description}
 							</p>

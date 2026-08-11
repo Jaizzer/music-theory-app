@@ -1,4 +1,4 @@
-// The phase/score/streak/timer state machine shared by every game
+// The phase/points/combo/timer state machine shared by every game
 // (ModeDrillGame, FretboardIdentifierGame, ScaleDegreeGame). Previously
 // each game duplicated this whole thing; extracted here once a third game
 // made "copy-paste it a third time" clearly the wrong move — the same
@@ -22,10 +22,26 @@ const ROUND_LENGTH = 10;
 const ADVANCE_DELAY_MS = 600;
 const RETRY_DELAY_MS = 800;
 
+// Mode Drill is the hardest of the three (two-part answer: note + mode),
+// Scale Degree next (two positions to compare), Fretboard Identifier
+// easiest (one position, one note) — points scale with difficulty so the
+// harder games are worth more per combo. Exported so HubPage can show the
+// multiplier on each game card.
+export const GAME_WEIGHTS: Record<GameSlug, number> = {
+	MODE_DRILL: 3,
+	SCALE_DEGREE: 2,
+	FRETBOARD_IDENTIFIER: 1,
+};
+
+// A wrong answer costs a little rather than wiping points back to zero —
+// the combo itself still resets (see answerIncorrect), but the points
+// already banked from earlier in the round mostly survive one mistake.
+const STREAK_BREAK_PENALTY = 5;
+
 export interface GameRoundStatus {
 	phase: GamePhase;
-	score: number;
-	streak: number;
+	points: number;
+	combo: number;
 	questionsAnswered: number;
 	correctCount: number;
 	roundLength: number;
@@ -44,8 +60,8 @@ export function useGameRound<Question>(
 ): GameRound<Question> {
 	const [question, setQuestion] = useState<Question>(generateQuestion);
 	const [phase, setPhase] = useState<GamePhase>('playing');
-	const [score, setScore] = useState(0);
-	const [streak, setStreak] = useState(0);
+	const [points, setPoints] = useState(0);
+	const [combo, setCombo] = useState(0);
 	const [questionsAnswered, setQuestionsAnswered] = useState(0);
 	const [correctCount, setCorrectCount] = useState(0);
 	const [submitError, setSubmitError] = useState<string | null>(null);
@@ -66,9 +82,13 @@ export function useGameRound<Question>(
 		if (phase !== 'playing') {
 			return;
 		}
+		// Each correct answer is worth more the longer the combo runs —
+		// nextCombo grows the multiplier, GAME_WEIGHTS makes the harder games
+		// worth more for the same combo length.
+		const nextCombo = combo + 1;
 		setPhase('correct');
-		setScore((current) => current + 10);
-		setStreak((current) => current + 1);
+		setCombo(nextCombo);
+		setPoints((current) => current + GAME_WEIGHTS[gameSlug] * nextCombo);
 		setCorrectCount((current) => current + 1);
 	}
 
@@ -78,7 +98,8 @@ export function useGameRound<Question>(
 		}
 		retryCallbackRef.current = onRetry ?? null;
 		setPhase('incorrect');
-		setStreak(0);
+		setCombo(0);
+		setPoints((current) => Math.max(0, current - STREAK_BREAK_PENALTY));
 	}
 
 	// The only two things that actually need an effect: real timers. Every
@@ -125,7 +146,7 @@ export function useGameRound<Question>(
 			method: 'POST',
 			body: JSON.stringify({
 				game: gameSlug,
-				score,
+				points,
 				correctCount,
 				totalCount: ROUND_LENGTH,
 				durationSeconds,
@@ -133,13 +154,13 @@ export function useGameRound<Question>(
 		}).catch(() => {
 			setSubmitError("Couldn't save this round, but here's how you did:");
 		});
-	}, [phase, gameSlug, startedAt, score, correctCount]);
+	}, [phase, gameSlug, startedAt, points, correctCount]);
 
 	return {
 		question,
 		phase,
-		score,
-		streak,
+		points,
+		combo,
 		questionsAnswered,
 		correctCount,
 		roundLength: ROUND_LENGTH,

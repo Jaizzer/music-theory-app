@@ -48,31 +48,31 @@ describe('GET /api/v1/leaderboard', () => {
 			.patch(`/api/v1/friends/${friendshipId}`)
 			.send({ status: 'ACCEPTED' });
 
-		// A plays twice (score 10 + 20 = 30 total), B plays once (score 5).
+		// A plays twice (points 10 + 20 = 30 total), B plays once (points 5).
 		await agentA.post('/api/v1/game-attempts').send({
 			game: 'MODE_DRILL',
-			score: 10,
+			points: 10,
 			correctCount: 1,
 			totalCount: 1,
 			durationSeconds: 5,
 		});
 		await agentA.post('/api/v1/game-attempts').send({
 			game: 'FRETBOARD_IDENTIFIER',
-			score: 20,
+			points: 20,
 			correctCount: 2,
 			totalCount: 2,
 			durationSeconds: 5,
 		});
 		await agentB.post('/api/v1/game-attempts').send({
 			game: 'MODE_DRILL',
-			score: 5,
+			points: 5,
 			correctCount: 1,
 			totalCount: 2,
 			durationSeconds: 5,
 		});
 		await agentC.post('/api/v1/game-attempts').send({
 			game: 'MODE_DRILL',
-			score: 1000,
+			points: 1000,
 			correctCount: 1,
 			totalCount: 1,
 			durationSeconds: 5,
@@ -100,7 +100,7 @@ describe('GET /api/v1/leaderboard', () => {
 			leaderboard: {
 				userId: string;
 				currentStreak: number;
-				totalScore: number;
+				totalPoints: number;
 			}[];
 		};
 		const byUserId = new Map(
@@ -114,11 +114,11 @@ describe('GET /api/v1/leaderboard', () => {
 		expect(byUserId.has(userCId)).toBe(true);
 
 		const entryA = byUserId.get(userAId);
-		expect(entryA?.totalScore).toBe(30);
+		expect(entryA?.totalPoints).toBe(30);
 		expect(entryA?.currentStreak).toBe(1);
 
 		const entryB = byUserId.get(userBId);
-		expect(entryB?.totalScore).toBe(5);
+		expect(entryB?.totalPoints).toBe(5);
 		expect(entryB?.currentStreak).toBe(1);
 	});
 
@@ -128,15 +128,15 @@ describe('GET /api/v1/leaderboard', () => {
 		expect((response.body as { scope: string }).scope).toBe('friends');
 
 		const body = response.body as {
-			leaderboard: { userId: string; totalScore: number }[];
+			leaderboard: { userId: string; totalPoints: number }[];
 		};
 		const byUserId = new Map(
 			body.leaderboard.map((entry) => [entry.userId, entry]),
 		);
 
 		expect(byUserId.has(userCId)).toBe(false);
-		expect(byUserId.get(userAId)?.totalScore).toBe(30);
-		expect(byUserId.get(userBId)?.totalScore).toBe(5);
+		expect(byUserId.get(userAId)?.totalPoints).toBe(30);
+		expect(byUserId.get(userBId)?.totalPoints).toBe(5);
 	});
 
 	test('an invalid scope value falls back to global rather than erroring', async () => {

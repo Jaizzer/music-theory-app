@@ -41,7 +41,7 @@ describe('GET /api/v1/streaks/me', () => {
 	test('reflects a streak after a game attempt is recorded', async () => {
 		await signedInAgent.post('/api/v1/game-attempts').send({
 			game: 'MODE_DRILL',
-			score: 10,
+			points: 10,
 			correctCount: 1,
 			totalCount: 1,
 			durationSeconds: 5,

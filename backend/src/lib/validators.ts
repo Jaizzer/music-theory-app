@@ -10,7 +10,7 @@ export const UpdateUserSchema = z.object({
 
 export const CreateGameAttemptSchema = z.object({
 	game: z.enum(GameSlug),
-	score: z.number().int().nonnegative(),
+	points: z.number().int().nonnegative(),
 	correctCount: z.number().int().nonnegative(),
 	totalCount: z.number().int().positive(),
 	durationSeconds: z.number().int().nonnegative(),

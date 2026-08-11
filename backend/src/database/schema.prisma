@@ -116,7 +116,7 @@ model GameAttempt {
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   game            GameSlug
-  score           Int
+  points          Int
   correctCount    Int
   totalCount      Int
   durationSeconds Int

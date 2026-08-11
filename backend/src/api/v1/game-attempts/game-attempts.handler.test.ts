@@ -30,7 +30,7 @@ describe('POST /api/v1/game-attempts', () => {
 	test('rejects a request with no session', async () => {
 		const response = await request(app).post('/api/v1/game-attempts').send({
 			game: 'MODE_DRILL',
-			score: 10,
+			points: 10,
 			correctCount: 1,
 			totalCount: 1,
 			durationSeconds: 5,
@@ -41,7 +41,7 @@ describe('POST /api/v1/game-attempts', () => {
 	test('rejects an invalid body', async () => {
 		const response = await signedInAgent
 			.post('/api/v1/game-attempts')
-			.send({ game: 'NOT_A_REAL_GAME', score: 10 });
+			.send({ game: 'NOT_A_REAL_GAME', points: 10 });
 		expect(response.status).toBe(400);
 	});
 
@@ -50,7 +50,7 @@ describe('POST /api/v1/game-attempts', () => {
 			.post('/api/v1/game-attempts')
 			.send({
 				game: 'MODE_DRILL',
-				score: 10,
+				points: 10,
 				correctCount: 1,
 				totalCount: 1,
 				durationSeconds: 5,
@@ -58,7 +58,7 @@ describe('POST /api/v1/game-attempts', () => {
 
 		expect(response.status).toBe(201);
 		const body = response.body as {
-			attempt: { userId: string; game: string; score: number };
+			attempt: { userId: string; game: string; points: number };
 			streak: { currentStreak: number; longestStreak: number };
 		};
 		expect(body.attempt.userId).toBe(userId);
@@ -72,7 +72,7 @@ describe('POST /api/v1/game-attempts', () => {
 			.post('/api/v1/game-attempts')
 			.send({
 				game: 'FRETBOARD_IDENTIFIER',
-				score: 20,
+				points: 20,
 				correctCount: 2,
 				totalCount: 2,
 				durationSeconds: 8,

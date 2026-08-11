@@ -5,7 +5,7 @@ import type { GameSlug } from '../../../database/generated/enums.ts';
 interface CreateGameAttemptInput {
 	userId: string;
 	game: GameSlug;
-	score: number;
+	points: number;
 	correctCount: number;
 	totalCount: number;
 	durationSeconds: number;
@@ -23,7 +23,7 @@ export async function createGameAttempt(input: CreateGameAttemptInput) {
 			data: {
 				userId: input.userId,
 				game: input.game,
-				score: input.score,
+				points: input.points,
 				correctCount: input.correctCount,
 				totalCount: input.totalCount,
 				durationSeconds: input.durationSeconds,

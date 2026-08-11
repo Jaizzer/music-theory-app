@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { getMyLeaderboard } from './leaderboard.handler.ts';
+import { getLeaderboardHandler } from './leaderboard.handler.ts';
 import requireAuth from '../../../middleware/authorization.ts';
 
 const router = Router();
 
-router.get('/me', requireAuth, getMyLeaderboard);
+// ?scope=global (default) | friends
+router.get('/', requireAuth, getLeaderboardHandler);
 
 export default router;

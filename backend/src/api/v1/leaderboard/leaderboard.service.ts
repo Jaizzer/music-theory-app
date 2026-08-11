@@ -9,29 +9,38 @@ export interface LeaderboardEntry {
 	totalScore: number;
 }
 
-// Returns the caller plus their accepted friends, each with both ranking
-// metrics (current streak, total score) in one response — the frontend
-// switches which one it sorts/displays by, rather than this hitting the
-// API twice per tab switch.
+export type LeaderboardScope = 'global' | 'friends';
+
+// Returns everyone (scope: 'global') or just the caller plus their accepted
+// friends (scope: 'friends'), each with both ranking metrics (current
+// streak, total score) in one response — the frontend switches which one
+// it sorts/displays by, rather than this hitting the API twice per tab
+// switch. No pagination yet — this is a brand-new app with a handful of
+// users; add a real limit once the user base is actually large enough for
+// an unbounded `findMany` to matter.
 //
-// Two queries total, however many friends there are — not N+1: one
-// findMany (joined to each user's Streak row) and one groupBy (summed
-// scores across every GameAttempt), merged in application code. This is
-// the concrete version of the N+1-avoidance the project's backstory claims.
+// Two queries total regardless of scope — not N+1: one findMany (joined to
+// each user's Streak row) and one groupBy (summed scores across every
+// GameAttempt), merged in application code. This is the concrete version
+// of the N+1-avoidance the project's backstory claims.
 export async function getLeaderboard(
 	userId: string,
+	scope: LeaderboardScope,
 ): Promise<LeaderboardEntry[]> {
-	const friendIds = await getAcceptedFriendIds(userId);
-	const memberIds = [userId, ...friendIds];
+	const memberIds =
+		scope === 'friends'
+			? [userId, ...(await getAcceptedFriendIds(userId))]
+			: undefined;
+	const membershipFilter = memberIds ? { id: { in: memberIds } } : {};
 
 	const [users, scoreSums] = await Promise.all([
 		prisma.user.findMany({
-			where: { id: { in: memberIds } },
+			where: membershipFilter,
 			select: { id: true, name: true, streak: true },
 		}),
 		prisma.gameAttempt.groupBy({
 			by: ['userId'],
-			where: { userId: { in: memberIds } },
+			where: memberIds ? { userId: { in: memberIds } } : {},
 			_sum: { score: true },
 		}),
 	]);

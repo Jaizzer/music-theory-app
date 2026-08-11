@@ -13,7 +13,7 @@ interface UserResponseBody {
 	user: { id: string };
 }
 
-describe('GET /api/v1/leaderboard/me', () => {
+describe('GET /api/v1/leaderboard', () => {
 	const agentA = request.agent(app);
 	const agentB = request.agent(app);
 	const agentC = request.agent(app);
@@ -87,13 +87,14 @@ describe('GET /api/v1/leaderboard/me', () => {
 	});
 
 	test('rejects a request with no session', async () => {
-		const response = await request(app).get('/api/v1/leaderboard/me');
+		const response = await request(app).get('/api/v1/leaderboard');
 		expect(response.status).toBe(401);
 	});
 
-	test('includes self and accepted friends, excludes non-friends, with correct totals', async () => {
-		const response = await agentA.get('/api/v1/leaderboard/me');
+	test('scope=global includes everyone, friend or not, with correct totals', async () => {
+		const response = await agentA.get('/api/v1/leaderboard?scope=global');
 		expect(response.status).toBe(200);
+		expect((response.body as { scope: string }).scope).toBe('global');
 
 		const body = response.body as {
 			leaderboard: {
@@ -106,7 +107,11 @@ describe('GET /api/v1/leaderboard/me', () => {
 			body.leaderboard.map((entry) => [entry.userId, entry]),
 		);
 
-		expect(byUserId.has(userCId)).toBe(false);
+		// C is not a friend of A, but global scope isn't friend-filtered — a
+		// shared test database can have users from other suites too, so this
+		// checks specific entries are present/correct rather than asserting
+		// an exact total count.
+		expect(byUserId.has(userCId)).toBe(true);
 
 		const entryA = byUserId.get(userAId);
 		expect(entryA?.totalScore).toBe(30);
@@ -115,5 +120,28 @@ describe('GET /api/v1/leaderboard/me', () => {
 		const entryB = byUserId.get(userBId);
 		expect(entryB?.totalScore).toBe(5);
 		expect(entryB?.currentStreak).toBe(1);
+	});
+
+	test('scope=friends includes self and accepted friends, excludes non-friends', async () => {
+		const response = await agentA.get('/api/v1/leaderboard?scope=friends');
+		expect(response.status).toBe(200);
+		expect((response.body as { scope: string }).scope).toBe('friends');
+
+		const body = response.body as {
+			leaderboard: { userId: string; totalScore: number }[];
+		};
+		const byUserId = new Map(
+			body.leaderboard.map((entry) => [entry.userId, entry]),
+		);
+
+		expect(byUserId.has(userCId)).toBe(false);
+		expect(byUserId.get(userAId)?.totalScore).toBe(30);
+		expect(byUserId.get(userBId)?.totalScore).toBe(5);
+	});
+
+	test('an invalid scope value falls back to global rather than erroring', async () => {
+		const response = await agentA.get('/api/v1/leaderboard?scope=nonsense');
+		expect(response.status).toBe(200);
+		expect((response.body as { scope: string }).scope).toBe('global');
 	});
 });

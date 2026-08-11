@@ -1,0 +1,69 @@
+# Continuous Integration: run the backend's test suite on every push/PR to
+# a non-main branch, so broken code gets flagged before it's ever merged.
+#
+# There's only one service (backend/) today. If a frontend/ package is added
+# later, duplicate the `test-backend` job below as `test-frontend` pointed at
+# `frontend`, and gate each job on a `paths-filter` step so a change to one
+# service doesn't force a pointless test run of the other. See
+# https://github.com/dorny/paths-filter for that pattern.
+name: Continuous Integration
+
+on:
+    push:
+        branches:
+            - "**"
+            - "!main"
+    pull_request:
+        branches:
+            - "**"
+            - "!main"
+
+jobs:
+    test-backend:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+
+            - name: Setup Node environment
+              uses: actions/setup-node@v6
+              with:
+                  node-version: "24.x"
+
+            # `npm ci` (not `npm install`) installs exactly what's in
+            # package-lock.json — reproducible, and fails loudly if the lock
+            # file is out of sync with package.json instead of silently
+            # rewriting it.
+            - name: Install dependencies
+              working-directory: backend
+              run: npm ci
+
+            - name: Run tests
+              working-directory: backend
+              # NODE_ENV=test tells backend/src/config/env.ts to load
+              # TEST_DATABASE_URL instead of the dev/prod database — CI runs
+              # against a disposable Postgres service defined below, never
+              # against real data.
+              run: npm test
+              env:
+                  NODE_ENV: test
+                  TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/backend_test
+                  BETTER_AUTH_SECRET: ci-test-secret-not-used-in-production
+
+        # Spin up a throwaway Postgres container for the lifetime of this
+        # job — the test suite needs a real database to run Prisma queries
+        # against, and this avoids depending on any external service.
+        services:
+            postgres:
+                image: postgres:16
+                env:
+                    POSTGRES_USER: postgres
+                    POSTGRES_PASSWORD: postgres
+                    POSTGRES_DB: backend_test
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd pg_isready
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5

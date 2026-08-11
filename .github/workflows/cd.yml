@@ -1,0 +1,72 @@
+# Continuous Delivery: on every push to main, apply pending Prisma
+# migrations to the production database, then build and deploy the backend
+# to Vercel.
+#
+# Before this workflow can succeed you must, once:
+#   1. Run `npx vercel link` inside backend/ to connect it to a Vercel
+#      project (this writes backend/.vercel/project.json).
+#   2. Add these repository secrets under Settings → Secrets and variables
+#      → Actions:
+#        - VERCEL_TOKEN            (from https://vercel.com/account/tokens)
+#        - PRODUCTION_DATABASE_URL (your production Postgres connection string)
+#        - BETTER_AUTH_SECRET      (a long random string, e.g. `openssl rand -hex 32`)
+name: Continuous Delivery
+
+on:
+    push:
+        branches:
+            - "main"
+
+jobs:
+    deploy-production-backend:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+
+            - name: Setup Node environment
+              uses: actions/setup-node@v6
+              with:
+                  node-version: "24.x"
+
+            - name: Install dependencies
+              working-directory: backend
+              run: npm ci
+
+            # Applies any migration in src/database/migrations that the
+            # production database hasn't seen yet. `migrate deploy` (unlike
+            # `migrate dev`) never generates new migrations and never prompts
+            # — it's the safe, non-interactive command for CI.
+            - name: Apply database migrations
+              working-directory: backend
+              run: npm run db:migrate:deploy
+              env:
+                  NODE_ENV: production
+                  PORT: "3000"
+                  PRODUCTION_DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+                  PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+                  BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+
+            - name: Pull Vercel Environment Information
+              working-directory: backend
+              run: npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+            - name: Build project artifacts
+              working-directory: backend
+              run: npm run build
+              env:
+                  NODE_ENV: production
+                  PORT: "3000"
+                  PRODUCTION_DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+                  PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+                  BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+
+            # No --prebuilt flag: vercel.json uses the legacy `builds` array
+            # pointing straight at dist/server.js (built in the previous
+            # step), so Vercel just packages that file rather than running
+            # its own build.
+            - name: Deploy project artifacts to Vercel
+              working-directory: backend
+              run: npx vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+run-name: Deploy to ${{ github.ref_name }} by @${{ github.actor }}

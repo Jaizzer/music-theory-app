@@ -14,7 +14,13 @@ import errorHandler from './middleware/errorHandler.ts';
 
 const app = express();
 
-app.use(cors());
+// `origin: true` reflects whatever Origin sent the request (required to
+// combine with `credentials: true`, since a literal wildcard "*" is
+// rejected by browsers once credentials are involved). This is what lets
+// the frontend's session cookie survive a cross-origin request at all —
+// pair it with a specific domain instead of reflecting everything once
+// there's a real production frontend origin to pin it to.
+app.use(cors({ origin: true, credentials: true }));
 
 // Better Auth's handler owns everything under this path (sign-up, sign-in,
 // sign-out, session, etc.) and must be mounted BEFORE express.json(): it

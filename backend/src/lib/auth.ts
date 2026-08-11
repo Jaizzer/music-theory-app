@@ -22,6 +22,13 @@ export const auth = betterAuth({
 	baseURL: config.betterAuth.url,
 	secret: config.betterAuth.secret,
 
+	// The frontend runs on a different origin than this API (different port
+	// in dev, different domain in production). Better Auth checks incoming
+	// requests' Origin header against this list independently of the
+	// Express-level `cors()` middleware in app.ts — both have to allow the
+	// frontend's origin for cross-origin sign-up/sign-in to work at all.
+	trustedOrigins: config.frontendUrl ? [config.frontendUrl] : [],
+
 	database: prismaAdapter(prisma, {
 		provider: 'postgresql',
 	}),

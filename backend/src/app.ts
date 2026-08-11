@@ -10,6 +10,7 @@ import { toNodeHandler } from 'better-auth/node';
 import { auth } from './lib/auth.ts';
 import healthRoutes from './api/v1/health/health.route.ts';
 import userRoutes from './api/v1/users/users.route.ts';
+import gameAttemptRoutes from './api/v1/game-attempts/game-attempts.route.ts';
 import errorHandler from './middleware/errorHandler.ts';
 
 const app = express();
@@ -33,6 +34,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/game-attempts', gameAttemptRoutes);
 
 // Registered last on purpose: Express only treats a middleware as an error
 // handler if it's declared with 4 arguments AND appears after the routes it

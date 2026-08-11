@@ -1,53 +1,53 @@
-// The whole page is deliberately just a wiring demo: it proves the
-// frontend can reach the backend (health check) and that a full auth round
-// trip works cross-origin (AuthPanel) — replace this with real UI once
-// those are confirmed working in your environment too.
-import { useEffect, useState } from 'react';
-import { apiFetch } from './lib/api.ts';
+// The router + auth gate. Signed out -> AuthPanel, full stop, no routes
+// are even mounted. Signed in -> a persistent header (email + sign out,
+// needed on every page) wraps whatever the router renders. Pages compose
+// features together (see src/pages/) — this file only decides "which page,"
+// never reaches into a feature's internals itself.
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
+import { authClient, useSession } from './lib/authClient.ts';
 import AuthPanel from './features/auth/AuthPanel.tsx';
 
-function HealthStatus() {
-	const [status, setStatus] = useState<'checking' | 'ok' | 'error'>(
-		'checking',
-	);
-
-	useEffect(() => {
-		apiFetch<{ status: string }>('/api/v1/health')
-			.then((body) => {
-				setStatus(body.status === 'ok' ? 'ok' : 'error');
-			})
-			.catch(() => {
-				setStatus('error');
-			});
-	}, []);
-
-	const color =
-		status === 'ok'
-			? 'text-green-600'
-			: status === 'error'
-				? 'text-red-600'
-				: 'text-slate-400';
-
-	return (
-		<p className={`text-sm ${color}`}>
-			Backend:{' '}
-			{status === 'checking'
-				? 'checking…'
-				: status === 'ok'
-					? 'ok'
-					: 'unreachable'}
-		</p>
-	);
-}
-
 export default function App() {
-	return (
-		<main className='mx-auto mt-16 max-w-sm space-y-6 px-4'>
-			<div>
+	const { data: session, isPending } = useSession();
+
+	// The title renders immediately either way — only the body beneath it
+	// waits on the session check — so there's no flash of a blank page
+	// while Better Auth's session request is in flight.
+	if (!session) {
+		return (
+			<main className='mx-auto mt-16 max-w-sm space-y-6 px-4'>
 				<h1 className='text-2xl font-bold'>Music Theory App</h1>
-				<HealthStatus />
+				{isPending ? (
+					<p className='text-sm text-slate-400'>Loading…</p>
+				) : (
+					<AuthPanel />
+				)}
+			</main>
+		);
+	}
+
+	return (
+		<BrowserRouter>
+			<div className='mx-auto max-w-3xl px-4'>
+				<header className='flex items-center justify-between py-4'>
+					<h1 className='text-xl font-bold'>Music Theory App</h1>
+					<div className='flex items-center gap-3 text-sm text-slate-500'>
+						<span>{session.user.email}</span>
+						<button
+							type='button'
+							onClick={() => void authClient.signOut()}
+							className='underline'
+						>
+							Sign out
+						</button>
+					</div>
+				</header>
+
+				<Routes>
+					<Route path='/' element={<p>Hub coming soon.</p>} />
+					<Route path='*' element={<Navigate to='/' replace />} />
+				</Routes>
 			</div>
-			<AuthPanel />
-		</main>
+		</BrowserRouter>
 	);
 }

@@ -1,19 +1,12 @@
-// Demonstrates the full auth loop end to end: sign up / sign in against
-// Better Auth (authClient.ts), then read/update the signed-in user's
-// profile through the backend's own /api/v1/users route (api.ts) — the
-// same session cookie authenticates both, which is the whole point of the
-// two working together.
-import { useEffect, useState } from 'react';
-import { authClient, useSession } from '../../lib/authClient.ts';
-import { apiFetch, ApiError } from '../../lib/api.ts';
+// Sign-up / sign-in against Better Auth (authClient.ts). This is only ever
+// rendered by App.tsx's auth gate when there's no session — once signed
+// in, the router takes over and this unmounts. Profile viewing/editing and
+// sign-out live at the app layer now (see App.tsx's header), not here,
+// since they're needed on every page, not just this one.
+import { useState } from 'react';
+import { authClient } from '../../lib/authClient.ts';
 
-interface Profile {
-	id: string;
-	email: string;
-	name: string | null;
-}
-
-function SignedOutView() {
+export default function AuthPanel() {
 	const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-up');
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
@@ -102,92 +95,5 @@ function SignedOutView() {
 				{mode === 'sign-up' ? 'Create account' : 'Sign in'}
 			</button>
 		</form>
-	);
-}
-
-function SignedInView({ userId }: { userId: string }) {
-	const [profile, setProfile] = useState<Profile | null>(null);
-	const [nameDraft, setNameDraft] = useState('');
-	const [error, setError] = useState<string | null>(null);
-
-	useEffect(() => {
-		apiFetch<{ user: Profile }>(`/api/v1/users/${userId}`)
-			.then((body) => {
-				setProfile(body.user);
-				setNameDraft(body.user.name ?? '');
-			})
-			.catch((err: unknown) => {
-				setError(
-					err instanceof ApiError ? err.message : 'Request failed.',
-				);
-			});
-	}, [userId]);
-
-	async function handleSave(event: React.FormEvent) {
-		event.preventDefault();
-		setError(null);
-		try {
-			const body = await apiFetch<{ user: Profile }>(
-				`/api/v1/users/${userId}`,
-				{ method: 'PUT', body: JSON.stringify({ name: nameDraft }) },
-			);
-			setProfile(body.user);
-		} catch (err) {
-			setError(err instanceof ApiError ? err.message : 'Request failed.');
-		}
-	}
-
-	if (!profile) {
-		return <p>Loading profile…</p>;
-	}
-
-	return (
-		<div className='space-y-3'>
-			<p>
-				Signed in as <strong>{profile.email}</strong>
-			</p>
-			<form
-				onSubmit={(event) => void handleSave(event)}
-				className='flex gap-2'
-			>
-				<input
-					value={nameDraft}
-					onChange={(event) => {
-						setNameDraft(event.target.value);
-					}}
-					className='rounded border px-3 py-2'
-				/>
-				<button
-					type='submit'
-					className='rounded bg-slate-900 px-4 py-2 text-white'
-				>
-					Save name
-				</button>
-			</form>
-			{error && <p className='text-sm text-red-600'>{error}</p>}
-			<button
-				type='button'
-				onClick={() => void authClient.signOut()}
-				className='text-sm underline'
-			>
-				Sign out
-			</button>
-		</div>
-	);
-}
-
-export default function AuthPanel() {
-	// Better Auth's own hook — re-runs automatically on sign-in/sign-out, so
-	// this component switches views without any manual state syncing.
-	const { data: session, isPending } = useSession();
-
-	if (isPending) {
-		return <p>Loading session…</p>;
-	}
-
-	return session ? (
-		<SignedInView userId={session.user.id} />
-	) : (
-		<SignedOutView />
 	);
 }

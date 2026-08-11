@@ -14,6 +14,33 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { prisma } from '../database/prismaClient.ts';
 import config from '../config/env.ts';
 
+// Every Vercel deployment of the frontend gets its own unique preview URL
+// in addition to the stable FRONTEND_URL alias (e.g.
+// music-theory-app-frontend-<hash>-jaizzers-projects.vercel.app) — a link
+// to one of those, opened directly, sends that exact origin, not the
+// stable one. Rather than list them (there's a new one every deploy),
+// trust a wildcard scoped to this project's own hostname prefix — derived
+// from FRONTEND_URL itself rather than hardcoding the project name as a
+// second, separately-maintained string. Only kicks in for *.vercel.app
+// URLs, so it's a no-op for local dev or a future custom domain.
+export function vercelPreviewOriginPattern(
+	frontendUrl: string,
+): string | undefined {
+	const url = new URL(frontendUrl);
+	if (!url.hostname.endsWith('.vercel.app')) {
+		return undefined;
+	}
+	const projectSlug = url.hostname.slice(0, -'.vercel.app'.length);
+	return `${url.protocol}//${projectSlug}-*.vercel.app`;
+}
+
+const trustedOrigins = config.frontendUrl
+	? [
+			config.frontendUrl,
+			vercelPreviewOriginPattern(config.frontendUrl),
+		].filter((origin) => origin !== undefined)
+	: [];
+
 export const auth = betterAuth({
 	// Every Better Auth endpoint lives under this path, e.g.
 	// POST /api/v1/authentication/sign-up/email. Must be mounted at the same
@@ -27,7 +54,7 @@ export const auth = betterAuth({
 	// requests' Origin header against this list independently of the
 	// Express-level `cors()` middleware in app.ts — both have to allow the
 	// frontend's origin for cross-origin sign-up/sign-in to work at all.
-	trustedOrigins: config.frontendUrl ? [config.frontendUrl] : [],
+	trustedOrigins,
 
 	// The session cookie defaults to SameSite=Lax, which is silently
 	// dropped on cross-*site* requests — not just cross-origin. In

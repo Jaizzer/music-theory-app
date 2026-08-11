@@ -13,6 +13,7 @@ import userRoutes from './api/v1/users/users.route.ts';
 import gameAttemptRoutes from './api/v1/game-attempts/game-attempts.route.ts';
 import streakRoutes from './api/v1/streaks/streaks.route.ts';
 import friendRoutes from './api/v1/friends/friends.route.ts';
+import leaderboardRoutes from './api/v1/leaderboard/leaderboard.route.ts';
 import errorHandler from './middleware/errorHandler.ts';
 
 const app = express();
@@ -39,6 +40,7 @@ app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/game-attempts', gameAttemptRoutes);
 app.use('/api/v1/streaks', streakRoutes);
 app.use('/api/v1/friends', friendRoutes);
+app.use('/api/v1/leaderboard', leaderboardRoutes);
 
 // Registered last on purpose: Express only treats a middleware as an error
 // handler if it's declared with 4 arguments AND appears after the routes it

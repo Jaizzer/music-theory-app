@@ -5,6 +5,10 @@
 		{
 			"source": "/api/:path*",
 			"destination": "https://music-theory-app-backend.vercel.app/api/:path*"
+		},
+		{
+			"source": "/(.*)",
+			"destination": "/index.html"
 		}
 	]
 }

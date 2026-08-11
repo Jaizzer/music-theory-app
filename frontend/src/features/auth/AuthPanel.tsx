@@ -41,9 +41,15 @@ export default function AuthPanel() {
 		// Better Auth doesn't leak whether the address exists — this
 		// resolves the same way either way, so the confirmation message
 		// stays neutral rather than "email sent" vs "no such account."
+		//
+		// redirectTo must be absolute: the backend resolves it against its
+		// *own* baseURL when building the emailed link's final redirect
+		// (see requestPasswordResetCallback in Better Auth), not the
+		// frontend's origin — a relative path here would land the user back
+		// on the backend's own domain with no matching route.
 		const result = await authClient.requestPasswordReset({
 			email,
-			redirectTo: '/reset-password',
+			redirectTo: `${window.location.origin}/reset-password`,
 		});
 
 		if (result.error) {

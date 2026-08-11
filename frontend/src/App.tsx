@@ -9,6 +9,7 @@ import AuthPanel from './features/auth/AuthPanel.tsx';
 import HubPage from './pages/HubPage.tsx';
 import ModeDrillPage from './pages/ModeDrillPage.tsx';
 import FretboardIdentifierPage from './pages/FretboardIdentifierPage.tsx';
+import ScaleDegreePage from './pages/ScaleDegreePage.tsx';
 import FriendsPage from './pages/FriendsPage.tsx';
 
 export default function App() {
@@ -56,6 +57,10 @@ export default function App() {
 					<Route
 						path='/games/fretboard-identifier'
 						element={<FretboardIdentifierPage />}
+					/>
+					<Route
+						path='/games/scale-degree'
+						element={<ScaleDegreePage />}
 					/>
 					<Route path='/friends' element={<FriendsPage />} />
 					<Route path='*' element={<Navigate to='/' replace />} />

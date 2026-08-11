@@ -12,45 +12,49 @@
 // `User` the same way Session/Account are.
 
 generator client {
-	provider = "prisma-client"
-	output   = "./generated"
+  provider = "prisma-client"
+  output   = "./generated"
 }
 
 datasource db {
-	provider = "postgresql"
+  provider = "postgresql"
 }
 
 model User {
-	id            String    @id @default(uuid())
-	email         String    @unique
-	name          String?
-	emailVerified Boolean   @default(false)
-	image         String?
-	createdAt     DateTime  @default(now())
-	updatedAt     DateTime  @updatedAt
-	sessions      Session[]
-	accounts      Account[]
+  id                  String        @id @default(uuid())
+  email               String        @unique
+  name                String?
+  emailVerified       Boolean       @default(false)
+  image               String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  sessions            Session[]
+  accounts            Account[]
+  gameAttempts        GameAttempt[]
+  streak              Streak?
+  friendshipsSent     Friendship[]  @relation("FriendshipRequester")
+  friendshipsReceived Friendship[]  @relation("FriendshipAddressee")
 
-	@@map("user")
+  @@map("user")
 }
 
 // One row per active login — this is what a session cookie's token maps to.
 // Better Auth checks `expiresAt` on every authenticated request and deletes
 // the row on sign-out.
 model Session {
-	id        String   @id
-	expiresAt DateTime
-	token     String
-	createdAt DateTime @default(now())
-	updatedAt DateTime @updatedAt
-	ipAddress String?
-	userAgent String?
-	userId    String
-	user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-	@@unique([token])
-	@@index([userId])
-	@@map("session")
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
 }
 
 // One row per way a User can authenticate: `providerId: "credential"` for
@@ -59,36 +63,106 @@ model Session {
 // can have both at once, which is how "sign in with Google OR password"
 // works for the same account.
 model Account {
-	id                    String    @id
-	accountId             String
-	providerId            String
-	userId                String
-	user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-	accessToken           String?
-	refreshToken          String?
-	idToken               String?
-	accessTokenExpiresAt  DateTime?
-	refreshTokenExpiresAt DateTime?
-	scope                 String?
-	password              String?
-	createdAt             DateTime  @default(now())
-	updatedAt             DateTime  @updatedAt
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
-	@@index([userId])
-	@@map("account")
+  @@index([userId])
+  @@map("account")
 }
 
 // Short-lived tokens for flows that aren't a logged-in session yet — email
 // verification links and password-reset links. `identifier` is typically
 // the user's email; `value` is the token itself.
 model Verification {
-	id         String   @id
-	identifier String
-	value      String
-	expiresAt  DateTime
-	createdAt  DateTime @default(now())
-	updatedAt  DateTime @updatedAt
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-	@@index([identifier])
-	@@map("verification")
+  @@index([identifier])
+  @@map("verification")
+}
+
+// One value per mini-game. Deliberately a single enum on GameAttempt rather
+// than a table per game (or a table of games) — the whole point of this app
+// is a *unified* platform of many small games, not one bespoke schema per
+// game. Adding a third game later means one new enum value, not a new table.
+enum GameSlug {
+  MODE_DRILL
+  FRETBOARD_IDENTIFIER
+}
+
+// One row per completed practice session. Game logic (question generation,
+// answer checking) lives entirely in the frontend — this only records the
+// final tally, which is all the backend actually needs to be authoritative
+// about (streaks, leaderboards). See src/api/v1/game-attempts/.
+model GameAttempt {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game            GameSlug
+  score           Int
+  correctCount    Int
+  totalCount      Int
+  durationSeconds Int
+  playedAt        DateTime @default(now())
+
+  @@index([userId])
+  @@map("game_attempt")
+}
+
+// One row per user, tracking their daily practice streak. `streakDate` is
+// truncated to UTC midnight and only ever advances once per calendar day —
+// this is what makes the grace-period math in
+// src/api/v1/game-attempts/game-attempts.service.ts safe against a user
+// playing multiple sessions in one day each resetting the eligibility
+// clock. See that file for the actual increment/reset/grace logic.
+model Streak {
+  userId          String    @id
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentStreak   Int       @default(0)
+  longestStreak   Int       @default(0)
+  streakDate      DateTime?
+  lastPracticedAt DateTime?
+
+  @@map("streak")
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+// One row per friend relationship, directional (requester -> addressee) so
+// a PENDING request has a clear owner. Querying "my friends" means: rows
+// where I'm either side AND status is ACCEPTED — see
+// src/api/v1/friends/friends.service.ts.
+model Friendship {
+  id          String           @id @default(uuid())
+  requesterId String
+  requester   User             @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addresseeId String
+  addressee   User             @relation("FriendshipAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId])
+  @@map("friendship")
 }

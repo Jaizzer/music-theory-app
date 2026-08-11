@@ -1,11 +1,10 @@
-# Continuous Integration: run the backend's test suite on every push/PR to
+# Continuous Integration: run each service's test suite on every push/PR to
 # a non-main branch, so broken code gets flagged before it's ever merged.
 #
-# There's only one service (backend/) today. If a frontend/ package is added
-# later, duplicate the `test-backend` job below as `test-frontend` pointed at
-# `frontend`, and gate each job on a `paths-filter` step so a change to one
-# service doesn't force a pointless test run of the other. See
-# https://github.com/dorny/paths-filter for that pattern.
+# The `changes` job below uses dorny/paths-filter to detect which of
+# backend/ or frontend/ this push/PR actually touched, so e.g. a
+# frontend-only change doesn't pay the cost of spinning up Postgres and
+# running the backend suite too.
 name: Continuous Integration
 
 on:
@@ -19,7 +18,25 @@ on:
             - "!main"
 
 jobs:
+    changes:
+        runs-on: ubuntu-latest
+        outputs:
+            frontend: ${{ steps.filter.outputs.frontend }}
+            backend: ${{ steps.filter.outputs.backend }}
+        steps:
+            - uses: actions/checkout@v6
+            - uses: dorny/paths-filter@v3
+              id: filter
+              with:
+                  filters: |
+                      frontend:
+                          - 'frontend/**'
+                      backend:
+                          - 'backend/**'
+
     test-backend:
+        needs: changes
+        if: ${{ needs.changes.outputs.backend == 'true' }}
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
@@ -67,3 +84,33 @@ jobs:
                     --health-interval 10s
                     --health-timeout 5s
                     --health-retries 5
+
+    test-frontend:
+        needs: changes
+        if: ${{ needs.changes.outputs.frontend == 'true' }}
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+
+            - name: Setup Node environment
+              uses: actions/setup-node@v6
+              with:
+                  node-version: "24.x"
+
+            - name: Install dependencies
+              working-directory: frontend
+              run: npm ci
+
+            - name: Run tests
+              working-directory: frontend
+              run: npm test
+
+            - name: Build
+              working-directory: frontend
+              run: npm run build
+              env:
+                  # A placeholder is fine here — the build only needs this var
+                  # to exist (see frontend/src/config/env.ts), it's never
+                  # actually called during a CI build.
+                  VITE_API_URL: http://localhost:3000

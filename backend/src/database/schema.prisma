@@ -104,6 +104,7 @@ model Verification {
 enum GameSlug {
   MODE_DRILL
   FRETBOARD_IDENTIFIER
+  SCALE_DEGREE
 }
 
 // One row per completed practice session. Game logic (question generation,

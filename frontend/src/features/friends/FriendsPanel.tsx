@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiFetch, ApiError } from '../../lib/api.ts';
+import Card from '../../components/Card.tsx';
+import Button from '../../components/Button.tsx';
 
 interface FriendUser {
 	id: string;
@@ -18,6 +20,9 @@ interface FriendsData {
 	outgoingRequests: FriendRequestEntry[];
 }
 
+const INPUT_CLASSES =
+	'block w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-text-dim focus:border-accent focus:outline-none';
+
 export default function FriendsPanel() {
 	const [data, setData] = useState<FriendsData | null>(null);
 	const [email, setEmail] = useState('');
@@ -31,8 +36,15 @@ export default function FriendsPanel() {
 			.then((body) => {
 				setData(body);
 			})
-			.catch(() => {
-				// Leave data as null — the loading message just persists.
+			.catch((err: unknown) => {
+				// Previously left `data` as null forever with no explanation —
+				// surfaced now so a failed load is visible instead of an
+				// indefinite "Loading…".
+				setError(
+					err instanceof ApiError
+						? err.message
+						: 'Could not load friends.',
+				);
 			});
 	}, [refreshToken]);
 
@@ -63,48 +75,51 @@ export default function FriendsPanel() {
 	}
 
 	if (!data) {
-		return <p className='text-sm text-slate-400'>Loading friends…</p>;
+		return (
+			<p className='text-sm text-text-muted'>
+				{error ?? 'Loading friends…'}
+			</p>
+		);
 	}
 
 	return (
 		<div className='space-y-4'>
-			<form
-				onSubmit={(event) => void handleSend(event)}
-				className='flex gap-2'
-			>
-				<input
-					type='email'
-					value={email}
-					onChange={(event) => {
-						setEmail(event.target.value);
-					}}
-					placeholder="Friend's email"
-					className='flex-1 rounded border px-3 py-2 text-sm'
-					required
-				/>
-				<button
-					type='submit'
-					className='rounded bg-slate-900 px-3 py-2 text-sm text-white'
+			<Card className='p-4'>
+				<form
+					onSubmit={(event) => void handleSend(event)}
+					className='flex gap-2'
 				>
-					Add
-				</button>
-			</form>
-			{error && <p className='text-sm text-red-600'>{error}</p>}
+					<input
+						type='email'
+						value={email}
+						onChange={(event) => {
+							setEmail(event.target.value);
+						}}
+						placeholder="Friend's email"
+						className={INPUT_CLASSES}
+						required
+					/>
+					<Button type='submit'>Add</Button>
+				</form>
+				{error && <p className='mt-2 text-sm text-error'>{error}</p>}
+			</Card>
 
 			{data.incomingRequests.length > 0 && (
-				<div>
-					<h3 className='text-sm font-bold'>Requests</h3>
-					<ul className='space-y-1'>
+				<Card className='p-4'>
+					<h3 className='mb-2 text-sm font-bold tracking-wide text-text-muted uppercase'>
+						Requests
+					</h3>
+					<ul className='space-y-2'>
 						{data.incomingRequests.map((request) => (
 							<li
 								key={request.friendshipId}
 								className='flex items-center justify-between text-sm'
 							>
-								<span>
+								<span className='text-text'>
 									{request.user.name ?? request.user.email}
 								</span>
 								<span className='flex gap-2'>
-									<button
+									<Button
 										type='button'
 										onClick={() =>
 											void respond(
@@ -112,11 +127,12 @@ export default function FriendsPanel() {
 												'ACCEPTED',
 											)
 										}
-										className='underline'
+										className='px-2 py-1 text-xs'
 									>
 										Accept
-									</button>
-									<button
+									</Button>
+									<Button
+										variant='ghost'
 										type='button'
 										onClick={() =>
 											void respond(
@@ -124,28 +140,30 @@ export default function FriendsPanel() {
 												'DECLINED',
 											)
 										}
-										className='underline'
+										className='px-2 py-1 text-xs'
 									>
 										Decline
-									</button>
+									</Button>
 								</span>
 							</li>
 						))}
 					</ul>
-				</div>
+				</Card>
 			)}
 
-			<div>
-				<h3 className='text-sm font-bold'>Friends</h3>
-				<ul className='space-y-1 text-sm'>
+			<Card className='p-4'>
+				<h3 className='mb-2 text-sm font-bold tracking-wide text-text-muted uppercase'>
+					Friends
+				</h3>
+				<ul className='space-y-1 text-sm text-text'>
 					{data.friends.map((friend) => (
 						<li key={friend.id}>{friend.name ?? friend.email}</li>
 					))}
 					{data.friends.length === 0 && (
-						<li className='text-slate-400'>No friends yet.</li>
+						<li className='text-text-dim'>No friends yet.</li>
 					)}
 				</ul>
-			</div>
+			</Card>
 		</div>
 	);
 }

@@ -4,10 +4,12 @@ import FretboardIdentifierGame from '../features/fretboard-identifier/FretboardI
 export default function FretboardIdentifierPage() {
 	return (
 		<div className='space-y-4 py-6'>
-			<Link to='/' className='text-sm underline'>
+			<Link to='/' className='text-sm text-accent hover:underline'>
 				&larr; Back to hub
 			</Link>
-			<h1 className='text-xl font-bold'>Fretboard Identifier</h1>
+			<h1 className='text-xl font-bold text-text'>
+				Fretboard Identifier
+			</h1>
 			<FretboardIdentifierGame />
 		</div>
 	);

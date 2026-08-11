@@ -11,6 +11,11 @@ export default defineConfig({
 		// backend's Better Auth config (backend/src/lib/auth.ts) has to know
 		// this exact origin in advance to trust cross-origin requests from it.
 		port: 5173,
+		// If 5173 is already taken (e.g. by another Vite project), Vite's
+		// default behavior is to silently move to the next free port —
+		// which would then mismatch the backend's trustedOrigins and break
+		// sign-in with a confusing CORS error. Fail loudly instead.
+		strictPort: true,
 	},
 	test: {
 		globals: true,

@@ -6,6 +6,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { authClient, useSession } from './lib/authClient.ts';
 import AuthPanel from './features/auth/AuthPanel.tsx';
+import HubPage from './pages/HubPage.tsx';
+import ModeDrillPage from './pages/ModeDrillPage.tsx';
+import FretboardIdentifierPage from './pages/FretboardIdentifierPage.tsx';
+import FriendsPage from './pages/FriendsPage.tsx';
 
 export default function App() {
 	const { data: session, isPending } = useSession();
@@ -44,7 +48,16 @@ export default function App() {
 				</header>
 
 				<Routes>
-					<Route path='/' element={<p>Hub coming soon.</p>} />
+					<Route path='/' element={<HubPage />} />
+					<Route
+						path='/games/mode-drill'
+						element={<ModeDrillPage />}
+					/>
+					<Route
+						path='/games/fretboard-identifier'
+						element={<FretboardIdentifierPage />}
+					/>
+					<Route path='/friends' element={<FriendsPage />} />
 					<Route path='*' element={<Navigate to='/' replace />} />
 				</Routes>
 			</div>

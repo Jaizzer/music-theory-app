@@ -38,14 +38,12 @@ describe('GET /api/v1/streaks/me', () => {
 		expect(body.streak.longestStreak).toBe(0);
 	});
 
-	test('reflects a streak after a game attempt is recorded', async () => {
-		await signedInAgent.post('/api/v1/game-attempts').send({
-			game: 'MODE_DRILL',
-			points: 10,
-			correctCount: 1,
-			totalCount: 1,
-			durationSeconds: 5,
-		});
+	test('reflects a streak after a game attempt session starts', async () => {
+		// The streak updates the moment a session is created, not when it
+		// finishes — see game-attempts.service.ts's createGameAttempt.
+		await signedInAgent
+			.post('/api/v1/game-attempts')
+			.send({ game: 'MODE_DRILL' });
 
 		const response = await signedInAgent.get('/api/v1/streaks/me');
 		expect(response.status).toBe(200);

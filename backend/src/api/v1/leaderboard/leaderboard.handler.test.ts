@@ -49,34 +49,33 @@ describe('GET /api/v1/leaderboard', () => {
 			.send({ status: 'ACCEPTED' });
 
 		// A plays twice (points 10 + 20 = 30 total), B plays once (points 5).
-		await agentA.post('/api/v1/game-attempts').send({
-			game: 'MODE_DRILL',
-			points: 10,
-			correctCount: 1,
-			totalCount: 1,
-			durationSeconds: 5,
-		});
-		await agentA.post('/api/v1/game-attempts').send({
-			game: 'FRETBOARD_IDENTIFIER',
-			points: 20,
-			correctCount: 2,
-			totalCount: 2,
-			durationSeconds: 5,
-		});
-		await agentB.post('/api/v1/game-attempts').send({
-			game: 'MODE_DRILL',
-			points: 5,
-			correctCount: 1,
-			totalCount: 2,
-			durationSeconds: 5,
-		});
-		await agentC.post('/api/v1/game-attempts').send({
-			game: 'MODE_DRILL',
-			points: 1000,
-			correctCount: 1,
-			totalCount: 1,
-			durationSeconds: 5,
-		});
+		// Each "play" is now a create (session start, zeroed) followed by a
+		// patch (session progress) — see game-attempts.handler.test.ts for
+		// dedicated coverage of that flow itself.
+		async function playAttempt(
+			agent: typeof agentA,
+			game: string,
+			points: number,
+			correctCount: number,
+			totalCount: number,
+		) {
+			const createResponse = await agent
+				.post('/api/v1/game-attempts')
+				.send({ game });
+			const { id } = (createResponse.body as { attempt: { id: string } })
+				.attempt;
+			await agent.patch(`/api/v1/game-attempts/${id}`).send({
+				points,
+				correctCount,
+				totalCount,
+				durationSeconds: 5,
+			});
+		}
+
+		await playAttempt(agentA, 'MODE_DRILL', 10, 1, 1);
+		await playAttempt(agentA, 'FRETBOARD_IDENTIFIER', 20, 2, 2);
+		await playAttempt(agentB, 'MODE_DRILL', 5, 1, 2);
+		await playAttempt(agentC, 'MODE_DRILL', 1000, 1, 1);
 	});
 
 	afterAll(async () => {

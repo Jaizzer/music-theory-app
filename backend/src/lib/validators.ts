@@ -8,8 +8,14 @@ export const UpdateUserSchema = z.object({
 	name: z.string().min(1).max(100),
 });
 
+// A session starts with nothing to report yet — see
+// UpdateGameAttemptSchema below for the fields this used to require,
+// which now only exist once at least one answer has happened.
 export const CreateGameAttemptSchema = z.object({
 	game: z.enum(GameSlug),
+});
+
+export const UpdateGameAttemptSchema = z.object({
 	points: z.number().int().nonnegative(),
 	correctCount: z.number().int().nonnegative(),
 	totalCount: z.number().int().positive(),

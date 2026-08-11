@@ -6,8 +6,8 @@
 // fretboard at all). Shared by both fretboard games — FretboardIdentifierGame
 // (one marker) and ScaleDegreeGame (two: root + target) — parameterized by
 // `markers` rather than owning any game-specific logic itself.
-const FRET_COUNT = 12;
-const STRING_COUNT = 6;
+import { FRET_COUNT, OPEN_STRING_NOTES } from '../lib/fretboardPositions.ts';
+
 const SINGLE_DOT_FRETS = new Set([3, 5, 7, 9]);
 const DOUBLE_DOT_FRET = 12;
 
@@ -30,7 +30,7 @@ const MARKER_COLOR_CLASSES: Record<FretboardMarker['color'], string> = {
 export default function Fretboard({ markers }: FretboardProps) {
 	const frets = Array.from({ length: FRET_COUNT + 1 }, (_, fret) => fret);
 	const strings = Array.from(
-		{ length: STRING_COUNT },
+		{ length: OPEN_STRING_NOTES.length },
 		(_, stringIndex) => stringIndex,
 	);
 

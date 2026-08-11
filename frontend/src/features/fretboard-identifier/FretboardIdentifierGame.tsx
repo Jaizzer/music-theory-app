@@ -3,12 +3,11 @@
 // ScaleDegreeGame) — this file only owns the single-answer check-and-retry
 // logic specific to this game.
 import { useState } from 'react';
+import { generateQuestion, type FretboardQuestion } from './fretboardLogic.ts';
 import {
 	CHROMATIC_NOTES,
 	getNoteAtPosition,
-	generateQuestion,
-	type FretboardQuestion,
-} from './fretboardLogic.ts';
+} from '../../lib/fretboardPositions.ts';
 import { useGameRound } from '../../lib/useGameRound.ts';
 import GameShell from '../../components/GameShell.tsx';
 import Fretboard from '../../components/Fretboard.tsx';

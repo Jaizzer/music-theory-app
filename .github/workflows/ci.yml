@@ -109,8 +109,3 @@ jobs:
             - name: Build
               working-directory: frontend
               run: npm run build
-              env:
-                  # A placeholder is fine here — the build only needs this var
-                  # to exist (see frontend/src/config/env.ts), it's never
-                  # actually called during a CI build.
-                  VITE_API_URL: http://localhost:3000

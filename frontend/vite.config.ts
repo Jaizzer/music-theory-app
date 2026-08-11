@@ -16,6 +16,17 @@ export default defineConfig({
 		// which would then mismatch the backend's trustedOrigins and break
 		// sign-in with a confusing CORS error. Fail loudly instead.
 		strictPort: true,
+		// Forwards /api/* to the real backend during `npm run dev`, so the
+		// browser only ever talks to this dev server's own origin — the same
+		// same-origin approach vercel.json's rewrites use in production (see
+		// authClient.ts for why this matters: it avoids cross-site cookies
+		// entirely instead of fighting browser privacy restrictions on them).
+		proxy: {
+			'/api': {
+				target: 'http://localhost:3000',
+				changeOrigin: true,
+			},
+		},
 	},
 	test: {
 		globals: true,

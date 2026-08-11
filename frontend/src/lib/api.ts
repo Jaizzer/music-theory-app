@@ -1,8 +1,13 @@
 // A thin fetch wrapper for the backend's non-auth routes (currently just
-// /api/v1/users and /api/v1/health). Auth routes go through authClient.ts
-// instead, which already knows how to talk to Better Auth's API shape.
-import config from '../config/env.ts';
-
+// /api/v1/users, /api/v1/health, /api/v1/game-attempts, /api/v1/streaks,
+// /api/v1/friends, /api/v1/leaderboard). Auth routes go through
+// authClient.ts instead, which already knows how to talk to Better Auth's
+// API shape.
+//
+// `path` is used as-is (a relative URL like `/api/v1/health`), resolved by
+// the browser against the current page's own origin — see authClient.ts
+// for why requests are same-origin rather than pointed at a separate
+// backend domain.
 export class ApiError extends Error {
 	// Not a constructor parameter property (`public status: number` in the
 	// constructor signature) — tsconfig.app.json's erasableSyntaxOnly rejects
@@ -20,10 +25,8 @@ export async function apiFetch<T>(
 	path: string,
 	options: RequestInit = {},
 ): Promise<T> {
-	const response = await fetch(`${config.apiUrl}${path}`, {
+	const response = await fetch(path, {
 		...options,
-		// Required for the browser to send the Better Auth session cookie —
-		// same reasoning as authClient.ts's fetchOptions.credentials.
 		credentials: 'include',
 		headers: { 'Content-Type': 'application/json', ...options.headers },
 	});

@@ -1,4 +1,10 @@
 {
 	"version": 2,
-	"outputDirectory": "dist"
+	"outputDirectory": "dist",
+	"rewrites": [
+		{
+			"source": "/api/:path*",
+			"destination": "https://music-theory-app-backend.vercel.app/api/:path*"
+		}
+	]
 }

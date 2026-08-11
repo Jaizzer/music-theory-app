@@ -2,17 +2,19 @@
 // Better Auth REST API the backend mounts at /api/v1/authentication — this
 // client just wraps those endpoints in typed methods and React hooks
 // (useSession below) instead of hand-writing fetch calls everywhere.
+//
+// No `baseURL` here on purpose: omitted, Better Auth's client defaults to
+// `window.location.origin`, i.e. relative requests to the frontend's own
+// origin. That's deliberate — see vite.config.ts's dev proxy and
+// vercel.json's rewrites, which transparently forward /api/* to the actual
+// backend. The browser never talks to the backend's own origin directly,
+// which sidesteps cross-site cookie restrictions entirely (Safari's ITP in
+// particular blocks third-party SameSite=None cookies for a lot of users,
+// even when everything is configured correctly).
 import { createAuthClient } from 'better-auth/react';
-import config from '../config/env.ts';
 
 export const authClient = createAuthClient({
-	baseURL: config.apiUrl,
 	basePath: '/api/v1/authentication',
-	// The backend and frontend run on different ports in dev (3000 vs 5173),
-	// which makes every request cross-origin. Without `credentials: 'include'`
-	// here, the browser would never attach the session cookie to requests —
-	// pairing this with `cors({ origin: true, credentials: true })` on the
-	// backend (src/app.ts) is what makes cross-origin cookies work at all.
 	fetchOptions: {
 		credentials: 'include',
 	},

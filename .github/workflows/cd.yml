@@ -127,13 +127,13 @@ jobs:
               working-directory: frontend
               run: npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
-            # Frontend has no vercel.json (see the repo README) — it's a
-            # pure static build, so Vercel zero-config-detects Vite and runs
-            # `npm run build` itself during `vercel deploy`.
+            # frontend/vercel.json sets outputDirectory (Vercel doesn't know
+            # this is a Vite project since it wasn't created via git-import,
+            # so it can't infer "dist" on its own) and rewrites /api/* to the
+            # backend, so the browser only ever talks to one origin — see
+            # frontend/src/lib/authClient.ts for why that matters.
             - name: Deploy project artifacts to Vercel
               working-directory: frontend
               run: npx vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
-              env:
-                  VITE_API_URL: ${{ secrets.PRODUCTION_URL }}
 
 run-name: Deploy to ${{ github.ref_name }} by @${{ github.actor }}

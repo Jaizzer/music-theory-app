@@ -1,0 +1,8 @@
+# Dependency folders are re-downloaded from package.json, never committed.
+node_modules
+
+# Scratch notes for the developer only — not part of the shipped app.
+todo.md
+
+# macOS Finder metadata.
+.DS_Store

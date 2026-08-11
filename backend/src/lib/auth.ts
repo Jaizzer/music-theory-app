@@ -11,9 +11,20 @@
 // Better Auth's own session instead.
 import { betterAuth } from 'better-auth/minimal';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
+import { createAuthMiddleware } from 'better-auth/api';
 import { prisma } from '../database/prismaClient.ts';
 import config from '../config/env.ts';
 import { sendAuthEmail } from './mailer.ts';
+
+// How long an unverified account gets to reserve its email before it's
+// treated as abandoned. Without this, sign-up permanently "claims" an
+// email the instant anyone types it in — verified or not — so a stranger
+// (accidentally or maliciously) entering someone else's address locks the
+// real owner out of ever signing up with their own email. Better Auth's
+// built-in /sign-up/email always creates the row immediately (there's no
+// config to defer that), so this expires the reservation instead of
+// deferring creation — see the hook below.
+const UNVERIFIED_ACCOUNT_GRACE_PERIOD_MS = 24 * 60 * 60 * 1000;
 
 // Every Vercel deployment of the frontend gets its own unique preview URL
 // in addition to the stable FRONTEND_URL alias (e.g.
@@ -75,6 +86,35 @@ export const auth = betterAuth({
 	database: prismaAdapter(prisma, {
 		provider: 'postgresql',
 	}),
+
+	// Runs before every request. Scoped to /sign-up/email so it fires
+	// ahead of Better Auth's own existing-user check on that endpoint —
+	// if the email belongs only to a stale, never-verified account, that
+	// account is deleted first so the real signup proceeds against a
+	// clean slate instead of bouncing off USER_ALREADY_EXISTS. A verified
+	// account, or one still inside its grace period, is left untouched.
+	hooks: {
+		before: createAuthMiddleware(async (ctx) => {
+			if (ctx.path !== '/sign-up/email') {
+				return;
+			}
+			const email = (ctx.body as { email?: unknown } | undefined)?.email;
+			if (typeof email !== 'string') {
+				return;
+			}
+			await prisma.user.deleteMany({
+				where: {
+					email: email.toLowerCase(),
+					emailVerified: false,
+					createdAt: {
+						lt: new Date(
+							Date.now() - UNVERIFIED_ACCOUNT_GRACE_PERIOD_MS,
+						),
+					},
+				},
+			});
+		}),
+	},
 
 	emailAndPassword: {
 		enabled: true,

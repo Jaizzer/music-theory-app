@@ -19,12 +19,10 @@ if git diff --name-only --cached | grep -q '^backend/'; then
 	cd ..
 fi
 
-# When a frontend/ package is added to this repo, mirror the block above:
-#
-#   if git diff --name-only --cached | grep -q '^frontend/'; then
-#       echo "frontend/ changed — running its pre-commit checks..."
-#       cd frontend
-#       npm test
-#       npm run pre-commit
-#       cd ..
-#   fi
+if git diff --name-only --cached | grep -q '^frontend/'; then
+	echo "frontend/ changed — running its pre-commit checks..."
+	cd frontend
+	npm test
+	npm run pre-commit
+	cd ..
+fi
